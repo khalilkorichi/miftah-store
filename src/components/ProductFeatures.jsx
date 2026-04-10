@@ -654,6 +654,7 @@ function ProductFeatures({ products, setProducts, durations, suppliers, exchange
       {activeSubTab === 'ai' && (
         <AIAssistantTab
           product={product}
+          products={products}
           suppliers={suppliers}
           durations={durations}
           activationMethods={activationMethods}
@@ -661,14 +662,66 @@ function ProductFeatures({ products, setProducts, durations, suppliers, exchange
           onAppSettingsChange={onAppSettingsChange}
           updateProduct={updateProduct}
           onNavigateToSettings={onNavigateToSettings}
+          onSelectProduct={setSelectedProductId}
         />
       )}
 
-      {activeSubTab === 'editor' && !product ? (
+      {activeSubTab === 'editor' && !product && products.length === 0 ? (
         <div className="pf-empty-state">
           <div className="pf-empty-icon"><FileTextIcon className="icon-xl" /></div>
-          <h3>يرجى اختيار منتج للبدء</h3>
-          <p>اختر منتجاً من القائمة أعلاه لإضافة الوصف والمزايا لخططه</p>
+          <h3>لا توجد منتجات بعد</h3>
+          <p>أضف منتجات من صفحة "المنتجات والأسعار" ثم عد هنا لإضافة الأوصاف والمزايا</p>
+        </div>
+      ) : activeSubTab === 'editor' && !product ? (
+        <div className="pf-products-grid">
+          {products.map((p, i) => {
+            const hasDesc = !!(p.description && p.description.replace(/<[^>]*>/g, '').trim());
+            const totalFeatures = (p.plans || []).reduce((sum, pl) => sum + (pl.features || []).length, 0);
+            const planCount = (p.plans || []).length;
+            const cardColor = p.cardColor || null;
+            const cardStyle = cardColor ? { '--card-accent': cardColor, borderInlineEnd: `3px solid ${cardColor}` } : {};
+            return (
+              <div
+                key={p.id}
+                className={`pf-product-card ${cardColor ? 'pf-product-card--colored' : ''}`}
+                style={cardStyle}
+                onClick={() => setSelectedProductId(String(p.id))}
+              >
+                {cardColor && (
+                  <div className="pf-product-card-color-bar" style={{ background: `linear-gradient(135deg, ${cardColor}22 0%, transparent 60%)` }} />
+                )}
+                <div className="pf-product-card-header">
+                  <span className="pf-product-card-index">{i + 1}</span>
+                  <h4 className="pf-product-card-name">{p.name}</h4>
+                  {hasDesc ? (
+                    <span className="pf-product-card-badge pf-badge-complete"><CheckCircleIcon className="icon-xs" /> مكتمل</span>
+                  ) : (
+                    <span className="pf-product-card-badge pf-badge-pending"><AlertTriangleIcon className="icon-xs" /> بدون وصف</span>
+                  )}
+                </div>
+                <div className="pf-product-card-meta">
+                  <span className="pf-product-card-chip"><TagIcon className="icon-xs" /> {planCount} خطة</span>
+                  <span className="pf-product-card-chip"><ListIcon className="icon-xs" /> {totalFeatures} ميزة</span>
+                  {(p.accountType && p.accountType !== 'none') && (
+                    <span className="pf-product-card-chip">{p.accountType === 'individual' ? '👤 فردي' : '👥 فريق'}</span>
+                  )}
+                </div>
+                {hasDesc && (
+                  <div className="pf-product-card-preview">
+                    {p.description.replace(/<[^>]*>/g, '').substring(0, 80)}...
+                  </div>
+                )}
+                <div className="pf-product-card-footer">
+                  <button className="pf-product-card-btn" onClick={(e) => { e.stopPropagation(); setSelectedProductId(String(p.id)); setActiveSubTab('editor'); }}>
+                    <FileTextIcon className="icon-xs" /> تحرير الوصف
+                  </button>
+                  <button className="pf-product-card-btn pf-btn-ai" onClick={(e) => { e.stopPropagation(); setSelectedProductId(String(p.id)); setActiveSubTab('ai'); }}>
+                    <SparklesIcon className="icon-xs" /> المساعد الذكي
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : activeSubTab === 'editor' ? (
         <div className="pf-editor-area">

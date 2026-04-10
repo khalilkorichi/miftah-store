@@ -3,6 +3,7 @@ import {
   SparklesIcon, SendIcon, RefreshIcon, CopyIcon, CheckCircleIcon,
   SettingsIcon, XIcon, ZapIcon, AlertTriangleIcon, KeyIcon,
   ChevronDownIcon, PackageIcon, PlusIcon, TrashIcon, ClockIcon,
+  FileTextIcon, TagIcon, ListIcon,
 } from './Icons';
 import { callAI } from '../utils/aiProvider';
 import MarkdownRenderer from './MarkdownRenderer';
@@ -259,6 +260,7 @@ function MessageBubble({ msg, onApplyDescription, product }) {
 /* ─── Main Component ────────────────────────────────────────────────────── */
 function AIAssistantTab({
   product,
+  products,
   suppliers,
   durations,
   activationMethods,
@@ -266,6 +268,7 @@ function AIAssistantTab({
   onAppSettingsChange,
   updateProduct,
   onNavigateToSettings,
+  onSelectProduct,
 }) {
   const [messages, setMessages] = useState([]);
   const [conversations, setConversations] = useState([]);
@@ -572,6 +575,54 @@ function AIAssistantTab({
 
   /* ── Empty state ── */
   if (!product) {
+    if (products && products.length > 0 && onSelectProduct) {
+      return (
+        <div className="pf-products-grid">
+          {products.map((p, i) => {
+            const hasDesc = !!(p.description && p.description.replace(/<[^>]*>/g, '').trim());
+            const totalFeatures = (p.plans || []).reduce((sum, pl) => sum + (pl.features || []).length, 0);
+            const planCount = (p.plans || []).length;
+            const cardColor = p.cardColor || null;
+            const cardStyle = cardColor ? { '--card-accent': cardColor, borderInlineEnd: `3px solid ${cardColor}` } : {};
+            return (
+              <div
+                key={p.id}
+                className={`pf-product-card ${cardColor ? 'pf-product-card--colored' : ''}`}
+                style={cardStyle}
+                onClick={() => onSelectProduct(String(p.id))}
+              >
+                {cardColor && (
+                  <div className="pf-product-card-color-bar" style={{ background: `linear-gradient(135deg, ${cardColor}22 0%, transparent 60%)` }} />
+                )}
+                <div className="pf-product-card-header">
+                  <span className="pf-product-card-index">{i + 1}</span>
+                  <h4 className="pf-product-card-name">{p.name}</h4>
+                  {hasDesc ? (
+                    <span className="pf-product-card-badge pf-badge-complete"><CheckCircleIcon className="icon-xs" /> مكتمل</span>
+                  ) : (
+                    <span className="pf-product-card-badge pf-badge-pending"><AlertTriangleIcon className="icon-xs" /> بدون وصف</span>
+                  )}
+                </div>
+                <div className="pf-product-card-meta">
+                  <span className="pf-product-card-chip"><TagIcon className="icon-xs" /> {planCount} خطة</span>
+                  <span className="pf-product-card-chip"><ListIcon className="icon-xs" /> {totalFeatures} ميزة</span>
+                </div>
+                {hasDesc && (
+                  <div className="pf-product-card-preview">
+                    {p.description.replace(/<[^>]*>/g, '').substring(0, 80)}...
+                  </div>
+                )}
+                <div className="pf-product-card-footer">
+                  <button className="pf-product-card-btn pf-btn-ai" onClick={(e) => { e.stopPropagation(); onSelectProduct(String(p.id)); }}>
+                    <SparklesIcon className="icon-xs" /> بدء المساعد الذكي
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
     return (
       <div className="ai-tab-empty">
         <div className="ai-tab-empty-icon">
